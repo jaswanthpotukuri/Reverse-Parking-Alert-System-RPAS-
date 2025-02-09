@@ -1,0 +1,56 @@
+Code for RPAS :
+
+import RPi.GPIO as GPIO
+import time
+
+# GPIO Pin Configuration
+TRIG = 23  # Ultrasonic Sensor Trigger
+ECHO = 24  # Ultrasonic Sensor Echo
+BUZZER = 18  # Buzzer Pin
+
+# GPIO Setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO, GPIO.IN)
+GPIO.setup(BUZZER, GPIO.OUT)
+
+def get_distance():
+    """Measures distance using HC-SR04 sensor"""
+    GPIO.output(TRIG, True)
+    time.sleep(0.00001)  # Send a short pulse
+    GPIO.output(TRIG, False)
+
+    start_time = time.time()
+    stop_time = time.time()
+
+    # Wait for Echo pin to go HIGH
+    while GPIO.input(ECHO) == 0:
+        start_time = time.time()
+
+    # Wait for Echo pin to go LOW
+    while GPIO.input(ECHO) == 1:
+        stop_time = time.time()
+
+    # Calculate time difference
+    elapsed_time = stop_time - start_time
+    distance = (elapsed_time * 34300) / 2  # Convert to cm
+
+    return round(distance, 2)
+
+try:
+    while True:
+        distance = get_distance()
+        print(f"Distance: {distance} cm")
+
+        if distance < 20:  # If obstacle is within 20 cm
+            GPIO.output(BUZZER, True)
+            time.sleep(0.2)
+            GPIO.output(BUZZER, False)
+        else:
+            GPIO.output(BUZZER, False)
+
+        time.sleep(0.5)  # Delay before next reading
+
+except KeyboardInterrupt:
+    print("\nSystem Stopped")
+    GPIO.cleanup()  # Reset GPIO settings
